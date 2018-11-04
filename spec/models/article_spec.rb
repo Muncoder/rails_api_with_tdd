@@ -19,22 +19,17 @@ RSpec.describe Article, type: :model do
 		end
 	end
 
-	describe '#show' do
-		let(:article) { create :article }
-		subject { get :show, params: { id: article.id } }
-
-		it 'should return success response' do
-			subject
-			expect(response).to have_http_status(:ok)
-		end
-
-		it 'should return proper json' do
-			subject
-			expect(json_data['attributes']).to eq({
-				"title" => article.title,
-				"content" => article.content,
-				"slug" => article.slug
-			})
+	describe '.recent' do
+		it 'should list recent article first' do
+			old_article = create :article
+			newer_article = create :article
+			expect(described_class.recent).to eq(
+				[ newer_article, old_article ]
+			)
+			old_article.update_column :created_at, Time.now
+			expect(described_class.recent).to eq(
+				[ old_article, newer_article ]
+			)
 		end
 	end
 end

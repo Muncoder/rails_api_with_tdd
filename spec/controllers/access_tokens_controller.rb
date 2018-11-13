@@ -2,26 +2,6 @@ require 'rails_helper'
 
 RSpec.describe AccessTokensController, type: :controller do
 	describe '#create' do
-		shared_examples_for "unauthorized_requests" do
-			let(:authentication_error) do
-				{
-					"status" => "401",
-					"source" => { "pointer" => "/code" },
-					"title" => "Authorization code is invalid",
-					"detail" => "You must provide valid code in order to exhange it for token"
-				}
-			end
-
-			it 'should return 401 status code' do
-				subject
-				expect(response).to have_http_status(401)
-			end
-
-			it 'should return proper error body' do
-				subject
-				expect(json['errors']).to include(authentication_error)
-			end
-		end
 
 		context 'when no code is provided' do
 			subject { post :create }
@@ -79,27 +59,16 @@ RSpec.describe AccessTokensController, type: :controller do
 	end
 
 	describe 'DELETE #destroy' do
-		context 'when invalid request' do
-			let(:authorization_error) do
-				{
-					"status" => "403",
-					"source" => { "pointer" => "/headers/authorization" },
-					"title" => "Not authorized",
-					"detail" => "You have no right to access this resource"
-				}
-			end
+		subject { delete :destroy }
 
-			subject { delete :destroy }
+		context 'when no authorization header provided' do
+			it_behaves_like 'forbidden_requests'
+		end
 
-			it 'should return 403 status code' do
-				subject
-				expect(response).to have_http_status(:forbidden)
-			end
+		context 'when invalid authorization header provided' do
+			before { request.headers['authorization'] = 'Invalid token' }
 
-			it 'should return proper error json' do
-				subject
-				expect(json['errors']).to include(authorization_error)
-			end
+			it_behaves_like 'forbidden_requests'
 		end
 
 		context 'when valid request' do
